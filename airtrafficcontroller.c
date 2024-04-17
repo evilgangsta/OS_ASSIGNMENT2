@@ -1,67 +1,84 @@
+#include <sys/types.h>
 #include <stdio.h>
+#include <unistd.h>
 #include <stdlib.h>
+#include <sys/wait.h>
 #include <sys/ipc.h>
-#include <string.h>
+#include <sys/shm.h>
+#include <stdio.h>
+#include <sys/msg.h>
 
-#define MAX_MSG_SIZE sizeof(Plane)
-#define MAX_TEXT 200
-#define MSG_TYPE 1
 
-typedef struct{
+
+struct Plane{
     int airport_arrival;
     int total_plane_weight;
     int plane_id;
     int airport_depart;
     int plane_type;
     int occupied_seats;
-} Plane;
+};
 
-typedef struct{
-    long int msg_type;
-    Plane plane_data;
-} plane_info;
-
-typedef struct{
-    long int msg_type;
-    char some_text[MAX_TEXT]
-} plane_order;
+struct my_msg{
+    long msg_type;
+    struct Plane data;
+    
+};
 
 //This process is used to direct planes to airports and from one airport to another
-int main(int argc, char *argv[]){
-
+int main(){
+    key_t key;
     int num_of_airports_managed; //2-10 inclusive
-    printf("\nEnter the number of airports to be handled/managed: ");
-    scanf("%d", &num_of_airports_managed);
-
-    key_t air_trarffic_key;
-    air_trarffic_key = ftok("sharedmem1.txt", 2);
-
-    //Set up a message queue
-    int msgid;
-
-    msgid = msgget(air_trarffic_key, 0666 | IPC_CREAT);
-
-    plane_info recieved_plane_info;
-    msgrcv(msgid, &recieved_plane_info, MAX_MSG_SIZE, MSG_TYPE, 0);
-
-    Plane recieved_plane = recieved_plane_info.plane_data;
-
-    printf("Recieve Plane ID: %d\n", recieved_plane.id);
-
-    plane_order order;
-    order.msg_type = MSG_TYPE;
+    printf("Enter the number of airports to be handled/managed:\n");
+    // fflush(stdout);
+    // scanf("%d",&num_of_airports_managed);
     
+    // if (scanf("%d", &num_of_airports_managed) != 1) {
+    //     fprintf(stderr, "Error reading input.\n");
+    //     exit(EXIT_FAILURE);
+    // }
+    printf("Enter the number of airports to be handled/managed:\n");
+    // printf("%d",num_of_airports_managed);
+    //Set up a message queue
+    
+    int msgid;
+    // struct my_msg plane_info;
+    system("touch msgq.txt");
+    key = ftok("msgq.txt", 2);
+    if (key == -1){
+        printf("error in creating unique key\n");
+        exit(1);
+    }
+    
+    msgid = msgget(key, 0644 | IPC_CREAT);
+    printf("%d",msgid);
     if(msgid == -1){
         printf("error in creating queue\n");
         return 1;
     }
+    printf("Message queue created with ID: %d", msgid);
+    printf("Enter the number of airports to be handled/managed:\n");
+    while (1){
+        // for(int i=1;i<=10;i++){
+            struct my_msg rec_msg;
+            printf("hello");
+            if(msgrcv(msgid,(void *)&rec_msg,sizeof(struct Plane),1,0)==-1){
+                perror("message receive error");
+                return 1;
+            }
+
+            struct my_msg airport_msg;
+            airport_msg.msg_type=1+10;
+            airport_msg.data=rec_msg.data;
+            printf("%d",airport_msg.data.total_plane_weight);
+
+            // if (msgsnd(msgid, (void *)&airport_msg, sizeof(struct Plane), 0) == -1) {
+            //     perror("msgsnd");
+            //     return 1;
+            // }       
+        // }
+    }
     
-    printf("Give the plane order to land of takeoff: ");
-    fgets(order.some_text, MAX_TEXT, stdin);
-
-    msgsnd(msgid, &order, sizeof(plane_order), 0);
-
-    printf("Data Sent is : %s \n", order.some_text);
 
     return 0;
 }

@@ -137,14 +137,14 @@ int main(){
     scanf("%d", &plane.airport_arrival);
     printf("%d\n", plane.total_plane_weight);
     
-    key_t key;
-    int msgid;
-    struct my_msg plane_info;
-    system("touch msgq.txt");
-    key = ftok("msgq.txt", 'B');
-    if (key == -1){
-    printf("error in creating unique key\n");
-    exit(1);
+     key_t key;
+     int msgid;
+     struct my_msg plane_info;
+     system("touch msgq.txt");
+     key = ftok("msgq.txt", 'B');
+     if (key == -1){
+        printf("error in creating unique key\n");
+        exit(1);
     }
     msgid = msgget(key, 0644|IPC_CREAT);
     
@@ -163,8 +163,8 @@ int main(){
     }else{
         printf("message sent");
     }
-    
-    // printf("%d",airport_msg.data.total_plane_weight);
+    s
+            printf("%d",airport_msg.data.total_plane_weight);
 
     //Now send the message to the air traffic controller containing the struct and air traffic controller 
     // should send a message containing the plane details to the departure airport to begin the boarding/loading
